@@ -1,0 +1,15 @@
+node_modules/
+npm-debug.log*
+*.tgz
+
+# Local config and any library that ends up inside a checkout by accident.
+.melora/
+.melora-library.json
+config.json
+Playlists/
+
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp

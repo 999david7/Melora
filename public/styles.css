@@ -1,0 +1,1309 @@
+/* Melora — editorial/technical.
+   Paper ground, hairline rules, uppercase letterspaced mono for every piece of
+   chrome, light display type for anything that is content. No web fonts and no
+   external stylesheets: the page loads nothing from anywhere. */
+
+:root {
+  --paper:      #ffffff;
+  --paper-2:    #fbfbfa;
+  --paper-3:    #f2f2f0;
+  --ink:        #0e0e0e;
+  --ink-2:      #4c4f54;
+  --ink-3:      #8b9097;
+  --ink-4:      #b4b8bd;
+  --rule:       #e2e2df;
+  --rule-soft:  #eeeeeb;
+  --gold:       #edc12a;
+  --danger:     #c8443b;
+
+  --radius:     2px;
+  --sidebar-w:  244px;
+  --panel-w:    392px;
+  --topbar-h:   56px;
+  --player-h:   72px;
+  /* Cover size in the album grid; the whole grid follows it. */
+  --cover-w:    186px;
+
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+}
+
+* { box-sizing: border-box; }
+
+html, body { height: 100%; margin: 0; }
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font: 400 13.5px/1.55 var(--sans);
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+
+.sprite { display: none; }
+[hidden] { display: none !important; }
+
+svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  flex: none;
+}
+
+::selection { background: var(--ink); color: var(--paper); }
+:focus-visible { outline: 1px solid var(--ink); outline-offset: 2px; }
+
+/* Default scrollbars are far too heavy next to hairline rules. */
+* { scrollbar-width: thin; scrollbar-color: var(--rule) transparent; }
+::-webkit-scrollbar { width: 11px; height: 11px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--rule);
+  border: 3px solid var(--paper);
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover { background: var(--ink-4); }
+::-webkit-scrollbar-corner { background: transparent; }
+
+/* ------------------------------------------------------------- type system */
+
+/*
+ * Three registers, used consistently:
+ *   .label     — mono, uppercase, wide tracking. Every piece of chrome.
+ *   .display   — light sans, tight tracking. Anything that is content.
+ *   body copy  — plain sans at 13.5px.
+ */
+
+.label {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 400;
+  line-height: 1.4;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.label--spaced { margin-top: 18px; }
+/* Confirmation lives on the field's own label — a toast per keystroke would
+   be unbearable, and no feedback at all leaves you unsure the edit landed. */
+.label.is-saved::after {
+  content: " — saved";
+  color: var(--ink);
+  animation: saved-in 200ms ease-out;
+}
+@keyframes saved-in { from { opacity: 0 } to { opacity: 1 } }
+
+.display {
+  margin: 0;
+  font-weight: 300;
+  font-size: 34px;
+  line-height: 1.14;
+  letter-spacing: -.021em;
+  color: var(--ink);
+  overflow-wrap: break-word;
+}
+.display--lg { font-size: 42px; }
+
+.meta-line {
+  margin: 0;
+  font-size: 12px;
+  color: var(--ink-3);
+}
+
+.lede { margin: 16px 0 0; color: var(--ink-2); max-width: 52ch; }
+.muted { color: var(--ink-3); font-size: 12.5px; margin: 6px 0 14px; }
+.footnote { margin-top: 18px; font-size: 12px; color: var(--ink-4); }
+.error { color: var(--danger); font-size: 12.5px; margin: 12px 0 0; }
+code, pre { font-family: var(--mono); font-size: 11.5px; }
+
+/* ---------------------------------------------------------------- controls */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  cursor: pointer;
+  white-space: nowrap;
+  text-decoration: none;
+  transition: border-color 120ms, background 120ms, color 120ms;
+}
+.btn:hover { border-color: var(--ink-3); }
+.btn:disabled { opacity: .4; cursor: default; }
+.btn-sm { padding: 6px 10px; }
+.btn-quiet { border-color: transparent; color: var(--ink-3); }
+.btn-quiet:hover { border-color: var(--rule); color: var(--ink); }
+.btn-danger { color: var(--danger); }
+.btn-danger:hover { border-color: var(--danger); }
+.btn.on { border-color: var(--ink); color: var(--ink); }
+.btn.on svg { fill: var(--gold); stroke: var(--gold); }
+
+/* The one heavyweight control: a wide bordered bar with a trailing arrow. */
+.action {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 16px 18px;
+  border: 1px solid var(--ink);
+  border-radius: var(--radius);
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: .15em;
+  text-transform: uppercase;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 130ms, color 130ms;
+}
+.action:hover { background: var(--ink); color: var(--paper); }
+.action svg { width: 18px; height: 18px; }
+.action--primary { background: var(--ink); color: var(--paper); }
+.action--primary:hover { background: var(--ink-2); border-color: var(--ink-2); }
+.action--wide { width: 100%; }
+
+.icon-btn {
+  display: inline-grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: var(--paper);
+  color: var(--ink-2);
+  cursor: pointer;
+  transition: border-color 120ms, color 120ms;
+}
+.icon-btn:hover { border-color: var(--ink); color: var(--ink); }
+.icon-btn--sm { width: 22px; height: 22px; border-color: transparent; }
+.icon-btn--sm:hover { border-color: var(--rule); }
+/* A toggle that is on reads as ink; a favourite is the one gold thing. */
+.icon-btn[aria-pressed="true"] { color: var(--ink); border-color: var(--rule); }
+#now-fav[aria-pressed="true"] svg, #q-fav.on svg { fill: var(--gold); stroke: var(--gold); }
+
+.text-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 0;
+  background: none;
+  padding: 4px 2px;
+  color: var(--ink-3);
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: color 120ms;
+}
+.text-btn:hover { color: var(--ink); }
+.text-btn[aria-pressed="true"] { color: var(--ink); }
+.text-btn--quiet { color: var(--ink-4); text-decoration: underline; }
+.text-btn em { font-style: normal; font-size: 9.5px; color: var(--ink-4); }
+
+.rule-v { width: 1px; height: 16px; background: var(--rule); }
+.slash { color: var(--ink-4); font-size: 11px; }
+.dot-sep { color: var(--ink-4); }
+
+input[type="text"], input[type="search"], textarea, .select {
+  width: 100%;
+  padding: 9px 11px;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+}
+input:focus, textarea:focus, .select:focus { border-color: var(--ink); outline: none; }
+textarea { resize: vertical; line-height: 1.5; }
+input::placeholder, textarea::placeholder { color: var(--ink-4); }
+.select { width: auto; cursor: pointer; font-size: 12.5px; }
+
+.field { display: block; }
+.field .label { display: block; margin-bottom: 7px; }
+.field-grid { display: grid; gap: 16px; }
+
+.check { display: flex; align-items: center; gap: 10px; cursor: pointer; margin: 10px 0; font-size: 13px; }
+.check input { accent-color: var(--ink); width: 14px; height: 14px; }
+.row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+
+/* ------------------------------------------------------------------- chips */
+
+.chips { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 20px; }
+
+.chip-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 10px;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+.chip-tag svg { width: 13px; height: 13px; color: var(--ink-3); }
+
+.chip-dot {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.chip-dot::before {
+  content: "";
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--ink-3);
+}
+.chip-dot--gold::before { background: var(--gold); }
+.chip-dot--wait::before { background: var(--ink-4); }
+
+/* --------------------------------------------------------- em-dash details */
+
+/*
+ * The detail register: a leading em-dash, an optional mono key, then the value.
+ * Used for track metadata, library stats and the lock screen's explanation, so
+ * they all read as one family.
+ */
+.dash-list { display: grid; gap: 11px; margin-top: 12px; }
+.dash-list--tight { gap: 7px; }
+
+.dash-row {
+  display: grid;
+  grid-template-columns: 12px auto 1fr;
+  gap: 10px;
+  align-items: baseline;
+  margin: 0;
+  font-size: 13px;
+}
+.dash-row::before { content: "—"; color: var(--ink-4); }
+.dash-row .k {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+.dash-row .v { color: var(--ink-2); overflow-wrap: anywhere; }
+/* A row with no key lets the value span both remaining columns. */
+.dash-row > .v:first-of-type:nth-child(2) { grid-column: 2 / -1; }
+
+/* ------------------------------------------------------------- lock / setup */
+
+.gate {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+.topbar--bare { border-bottom: 1px solid var(--rule); }
+
+.gate-inner {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 72px 40px 64px;
+}
+.gate-panel { max-width: 560px; margin: 0 auto; }
+.gate-panel > .display { margin-top: 14px; }
+.gate-actions { display: flex; gap: 12px; align-items: center; margin-top: 30px; flex-wrap: wrap; }
+.gate-actions .action { min-width: 260px; }
+
+.panel-section { margin-top: 34px; padding-top: 22px; border-top: 1px solid var(--rule-soft); }
+
+.picker {
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  margin-top: 12px;
+  overflow: hidden;
+}
+.picker-shortcuts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 9px 10px;
+  border-bottom: 1px solid var(--rule-soft);
+  background: var(--paper-2);
+}
+.chip {
+  padding: 4px 10px;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: var(--paper);
+  color: var(--ink-3);
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.chip:hover { color: var(--ink); border-color: var(--ink-3); }
+.chip.on { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+
+.picker-path {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--rule-soft);
+}
+.picker-path code {
+  color: var(--ink-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  direction: rtl;      /* Keep the tail of a long path visible. */
+  text-align: left;
+}
+.picker-list { list-style: none; margin: 0; padding: 4px; max-height: 200px; overflow-y: auto; }
+.picker-list li button {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: var(--radius);
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+.picker-list li button:hover { background: var(--paper-3); }
+.picker-list li button svg { color: var(--ink-4); width: 14px; height: 14px; }
+.picker-empty { padding: 14px; color: var(--ink-4); font-size: 12.5px; text-align: center; }
+
+.setup-target { margin: 20px 0 0; font-size: 12.5px; color: var(--ink-3); }
+.setup-target code { color: var(--ink); }
+
+/* --------------------------------------------------------------- app shell */
+
+.app { display: grid; grid-template-rows: auto 1fr auto auto; height: 100%; }
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: var(--topbar-h);
+  padding: 0 22px;
+  border-bottom: 1px solid var(--rule);
+  flex: none;
+}
+.mark {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: .28em;
+  text-transform: uppercase;
+}
+.mark-glyph { width: 17px; height: 17px; stroke-width: 1.2; }
+.topbar-right { display: flex; align-items: center; gap: 12px; }
+
+.body { display: grid; grid-template-columns: var(--sidebar-w) 1fr; min-height: 0; }
+
+/* ----------------------------------------------------------------- sidebar */
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-right: 1px solid var(--rule);
+  background: var(--paper-2);
+}
+.sidebar-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 14px 10px 20px;
+}
+.sidebar-head--split { border-top: 1px solid var(--rule); padding-top: 14px; }
+.tree { flex: 1 1 auto; min-height: 80px; overflow-y: auto; padding: 0 10px 14px; }
+.playlists { flex: 0 1 auto; max-height: 30vh; overflow-y: auto; padding: 0 10px 12px; }
+.sidebar-foot { border-top: 1px solid var(--rule); padding: 16px 20px 18px; }
+.sidebar-foot .dash-list { margin-top: 10px; }
+.sidebar-foot .dash-row { font-size: 12px; grid-template-columns: 10px 1fr; }
+.sidebar-foot .dash-row .v { color: var(--ink-2); }
+
+.tree-row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  border-radius: var(--radius);
+  color: var(--ink-2);
+}
+.tree-row:hover { background: var(--paper-3); color: var(--ink); }
+/* Selection in a list wants a marker, not the inversion the segmented
+   controls use — a whole black row is too much weight for a tree. */
+.tree-row[aria-current="true"] {
+  background: var(--paper-3);
+  color: var(--ink);
+  box-shadow: inset 2px 0 0 var(--ink);
+}
+.tree-row[aria-current="true"] .tree-label { font-weight: 500; }
+.tree-row[aria-current="true"] .tree-count { color: var(--ink-3); }
+
+.tree-twist {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 26px;
+  border: 0;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+  padding: 0;
+  flex: none;
+}
+.tree-twist svg { width: 12px; height: 12px; transition: transform 130ms; }
+.tree-twist[aria-expanded="true"] svg { transform: rotate(90deg); }
+.tree-twist.leaf { visibility: hidden; }
+
+.tree-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+  padding: 5px 9px 5px 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+.tree-label svg { width: 13px; height: 13px; opacity: .5; }
+.tree-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tree-count { margin-left: auto; font-family: var(--mono); font-size: 10px; color: var(--ink-4); }
+.tree-children { margin-left: 13px; border-left: 1px solid var(--rule); padding-left: 3px; }
+.tree-empty { padding: 4px 10px; font-size: 12.5px; color: var(--ink-4); }
+
+/* Playlists reuse the tree row, minus the twist. */
+.playlists .tree-row { padding-left: 8px; }
+.playlists .tree-label { padding-left: 0; }
+.pl-missing { color: var(--danger); font-family: var(--mono); font-size: 10px; margin-left: 6px; }
+
+/* -------------------------------------------------------------------- main */
+
+.main { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+
+.filterbar { display: flex; justify-content: center; padding: 16px 20px 2px; flex: none; }
+
+/* The segmented category row: a rounded hairline capsule, active item marked
+   with a leading dot and an underline inside the capsule. */
+.segments {
+  display: flex;
+  align-items: stretch;
+  gap: 2px;
+  padding: 4px;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  background: var(--paper);
+}
+.segment {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 18px 8px;
+  border: 0;
+  background: none;
+  color: var(--ink-3);
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  cursor: pointer;
+  border-radius: 999px;
+  transition: color 120ms;
+}
+.segment:hover { color: var(--ink); }
+.segment.is-on { color: var(--ink); }
+.segment.is-on::before {
+  content: "";
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--ink);
+}
+.segment.is-on::after {
+  content: "";
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  bottom: 2px;
+  height: 1px;
+  background: var(--ink);
+}
+.segment em { font-style: normal; font-size: 9.5px; color: var(--ink-4); }
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 14px 24px;
+  flex: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color 140ms;
+}
+/* The rule only appears once tracks are actually passing underneath it. */
+.toolbar.is-stuck { border-bottom-color: var(--rule); }
+
+.crumbs { display: flex; align-items: center; gap: 5px; min-width: 0; flex-wrap: wrap; }
+.crumbs button {
+  border: 0;
+  background: none;
+  color: var(--ink-3);
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  cursor: pointer;
+  padding: 2px 3px;
+}
+.crumbs button:hover { color: var(--ink); }
+.crumbs .crumb-last {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+.crumbs .sep { color: var(--ink-4); font-size: 10px; }
+.crumbs .crumb-count {
+  margin-left: 10px;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--ink-4);
+}
+.crumbs .icon-btn { margin-left: 6px; }
+
+/* The numbered strip: zero-padded index over a label, active one inverted. */
+.strip { display: flex; border: 1px solid var(--rule); border-radius: var(--radius); overflow: hidden; margin-left: auto; }
+.strip-item {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  padding: 5px 11px 6px;
+  border: 0;
+  border-left: 1px solid var(--rule);
+  background: var(--paper);
+  color: var(--ink-3);
+  cursor: pointer;
+  font-family: var(--mono);
+  transition: background 120ms, color 120ms;
+}
+.strip-item:first-child { border-left: 0; }
+.strip-item em { font-style: normal; font-size: 8.5px; letter-spacing: .1em; color: var(--ink-4); }
+.strip-item span { font-size: 9.5px; letter-spacing: .14em; text-transform: uppercase; }
+.strip-item:hover { color: var(--ink); background: var(--paper-2); }
+.strip-item.is-on { background: var(--ink); color: var(--paper); }
+.strip-item.is-on em { color: var(--ink-4); }
+
+.search { position: relative; display: flex; align-items: center; }
+.search svg { position: absolute; left: 10px; color: var(--ink-4); width: 14px; height: 14px; pointer-events: none; }
+.search input {
+  width: 210px;
+  padding: 8px 10px 8px 32px;
+  font-family: var(--mono);
+  font-size: 11.5px;
+  letter-spacing: .04em;
+}
+/* Only the placeholder wears the chrome register. Uppercasing the field
+   itself would show "TALK TALK" while the query is really "talk talk". */
+.search input::placeholder {
+  font-size: 10.5px;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+}
+
+.folder-note {
+  padding: 12px 24px;
+  border-top: 1px solid var(--rule-soft);
+  border-bottom: 1px solid var(--rule-soft);
+  color: var(--ink-2);
+  font-size: 13px;
+  background: var(--paper-2);
+}
+
+.scroller { flex: 1; min-height: 0; overflow-y: auto; padding: 16px 24px 40px; }
+
+/* --------------------------------------------------------------- the hero */
+
+/* An album (or playlist) opens on its own header: the cover at a size worth
+   looking at, the facts beside it, and the one button you came for. */
+.hero {
+  display: grid;
+  grid-template-columns: 208px 1fr;
+  gap: 26px;
+  align-items: end;
+  padding-bottom: 26px;
+  margin-bottom: 22px;
+  border-bottom: 1px solid var(--rule);
+}
+.hero-cover {
+  position: relative;
+  aspect-ratio: 1;
+  background: var(--paper-3);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+.hero-cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.hero-cover svg { width: 40px; height: 40px; color: var(--ink-4); stroke-width: 1; }
+.hero-body { min-width: 0; }
+.hero-body .display { margin-top: 10px; }
+.hero-artist { margin: 10px 0 0; }
+.hero-facts {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  flex-wrap: wrap;
+}
+.hero-actions { display: flex; gap: 8px; margin-top: 20px; flex-wrap: wrap; }
+
+/* -------------------------------------------------------------- subfolders */
+
+.subfolders,
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(var(--cover-w), 1fr));
+  gap: 20px 16px;
+  margin-bottom: 30px;
+}
+
+.card {
+  display: block;
+  border: 0;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  min-width: 0;
+}
+.card-cover {
+  position: relative;
+  aspect-ratio: 1;
+  background: var(--paper-3);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  transition: border-color 130ms;
+}
+.card:hover .card-cover { border-color: var(--ink); }
+.card-cover img { width: 100%; height: 100%; object-fit: cover; display: block; opacity: 0; transition: opacity 240ms ease-out; }
+.card-cover img.loaded { opacity: 1; }
+.card-cover > svg { width: 26px; height: 26px; color: var(--ink-4); stroke-width: 1.1; }
+/* A round card for a person, a square one for a record. */
+.card--round .card-cover { border-radius: 50%; }
+.card-cover .pin {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--paper);
+  color: var(--gold);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, .18);
+}
+.card-cover .pin svg { width: 11px; height: 11px; color: var(--gold); fill: var(--gold); }
+
+/* The play affordance only appears on the card you are pointing at. */
+.card-play {
+  position: absolute;
+  right: 9px;
+  bottom: 9px;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--ink);
+  border-radius: 50%;
+  background: var(--paper);
+  color: var(--ink);
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 130ms, transform 130ms;
+}
+.card:hover .card-play, .card:focus-visible .card-play { opacity: 1; transform: none; }
+.card-play svg { width: 13px; height: 13px; fill: currentColor; stroke: none; margin-left: 1px; }
+
+.card-body { padding: 10px 2px 0; }
+.card-body strong {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.card-body small {
+  display: block;
+  margin-top: 3px;
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--ink-4);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ------------------------------------------------------------ track listing */
+
+/*
+ * A list, not a grid: music is read left to right, and the only picture worth
+ * showing is the one on the record. Columns collapse away as the window
+ * narrows, so the title never gets squeezed to make room for a bitrate.
+ */
+.tracks { display: block; }
+
+.track {
+  display: grid;
+  grid-template-columns: 30px 1fr 22ch 8ch 26px;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 7px 10px;
+  border: 0;
+  border-bottom: 1px solid var(--rule-soft);
+  border-radius: var(--radius);
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.track:hover { background: var(--paper-2); }
+.track:focus-visible { outline: 1px solid var(--ink); outline-offset: -1px; }
+.track[aria-current="true"] { background: var(--paper-3); box-shadow: inset 2px 0 0 var(--ink); }
+.track[aria-current="true"] .track-title { font-weight: 500; }
+
+.track-index {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .1em;
+  color: var(--ink-4);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+/* The index turns into a play glyph under the pointer — the row is the
+   button, so it should say so. */
+.track:hover .track-index-n, .track[aria-current="true"] .track-index-n { display: none; }
+.track-index-play { display: none; }
+.track:hover .track-index-play { display: inline; color: var(--ink); }
+.track[aria-current="true"] .track-index-bars { display: inline-flex; }
+.track-index-bars { display: none; gap: 2px; align-items: flex-end; height: 11px; justify-content: flex-end; }
+.track-index-bars i { width: 2px; background: var(--ink); animation: bars 900ms ease-in-out infinite; }
+.track-index-bars i:nth-child(1) { height: 40%; animation-delay: -200ms; }
+.track-index-bars i:nth-child(2) { height: 100%; }
+.track-index-bars i:nth-child(3) { height: 65%; animation-delay: -400ms; }
+.is-paused .track-index-bars i { animation-play-state: paused; }
+@keyframes bars { 0%, 100% { transform: scaleY(.4) } 50% { transform: scaleY(1) } }
+
+.track-main { min-width: 0; }
+.track-title {
+  display: block;
+  font-size: 13.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.track-artist {
+  display: block;
+  font-size: 12px;
+  color: var(--ink-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.track-album {
+  font-size: 12px;
+  color: var(--ink-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.track-time {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink-3);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.track-fav { display: grid; place-items: center; color: var(--ink-4); }
+.track-fav svg { width: 13px; height: 13px; }
+.track-fav.on svg { color: var(--gold); fill: var(--gold); }
+.track-fav:not(.on) { opacity: 0; transition: opacity 120ms; }
+.track:hover .track-fav:not(.on) { opacity: 1; }
+
+/* A format the browser cannot decode is shown, greyed, rather than hidden. */
+.track.is-opaque { cursor: default; color: var(--ink-4); }
+.track.is-opaque:hover { background: none; }
+.track.is-opaque .track-title { color: var(--ink-3); }
+
+.sentinel { height: 1px; }
+
+.empty {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  padding: 84px 20px;
+  max-width: 44ch;
+  margin: 0 auto;
+  text-align: center;
+}
+.empty .label { color: var(--ink-3); }
+.empty p { margin: 0; color: var(--ink-3); font-size: 13px; line-height: 1.6; }
+.empty .rule { width: 28px; height: 1px; background: var(--rule); margin: 4px 0; }
+
+/* ---------------------------------------------------------------- job line */
+
+.jobline {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 30px;
+  padding: 0 24px;
+  border-top: 1px solid var(--rule);
+  background: var(--paper-2);
+  flex: none;
+}
+.jobline #job-detail {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .1em;
+  color: var(--ink-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.jobline .text-btn { margin-left: auto; }
+
+/* Progress rides the top edge of the strip as a hairline. */
+.job-fill {
+  position: absolute;
+  top: -1px;
+  left: 0;
+  width: 0;
+  height: 1px;
+  background: var(--ink);
+  transition: width 220ms;
+}
+
+/* ----------------------------------------------------------------- player */
+
+/* The right-hand controls are sized by their content rather than by a
+   fraction: given a share of the width they overflow it and land on top of
+   the seek bar, which is worse than a slightly narrower transport. */
+.player {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 1.5fr) auto;
+  align-items: center;
+  gap: 20px;
+  height: var(--player-h);
+  padding: 0 20px;
+  border-top: 1px solid var(--rule);
+  flex: none;
+}
+
+.now { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.now-art {
+  flex: none;
+  width: 46px;
+  height: 46px;
+  padding: 0;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: var(--paper-3);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  cursor: pointer;
+  color: var(--ink-4);
+  transition: border-color 120ms;
+}
+.now-art:hover { border-color: var(--ink); }
+.now-art img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.now-art svg { width: 18px; height: 18px; stroke-width: 1.1; }
+.now-text { min-width: 0; }
+.now-title {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.now-sub {
+  display: block;
+  margin-top: 2px;
+  font-size: 11.5px;
+  color: var(--ink-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.transport { display: grid; gap: 5px; justify-items: center; min-width: 0; width: 100%; }
+.transport-buttons { display: flex; align-items: center; gap: 10px; }
+
+/* One glyph, three states. Repeating a single track gets a small numeral
+   rather than a second icon nobody would recognise. */
+#btn-repeat { position: relative; }
+#btn-repeat[data-mode="one"]::after {
+  content: "1";
+  position: absolute;
+  right: -3px;
+  bottom: -3px;
+  font-family: var(--mono);
+  font-size: 8px;
+  line-height: 1;
+  padding: 1px 2px;
+  border-radius: 2px;
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.play-btn {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid var(--ink);
+  border-radius: 50%;
+  background: var(--paper);
+  color: var(--ink);
+  cursor: pointer;
+  transition: background 130ms, color 130ms;
+}
+.play-btn:hover { background: var(--ink); color: var(--paper); }
+.play-btn svg { width: 15px; height: 15px; fill: currentColor; stroke: none; }
+/* The pause glyph is two strokes, not a filled shape. */
+.play-btn svg.is-pause { fill: none; stroke: currentColor; stroke-width: 1.8; }
+
+.scrub { display: flex; align-items: center; gap: 12px; width: 100%; }
+.time {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .08em;
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+  flex: none;
+  width: 5ch;
+}
+.time:last-child { text-align: right; }
+
+/* A hairline track with a small open handle, to match everything else. */
+.seek, .vol {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 18px;
+  background: transparent;
+  cursor: pointer;
+}
+.seek { flex: 1; min-width: 0; }
+.vol { width: 84px; flex: none; }
+.seek::-webkit-slider-runnable-track, .vol::-webkit-slider-runnable-track { height: 1px; background: var(--rule); }
+.seek::-webkit-slider-thumb, .vol::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 11px;
+  height: 11px;
+  margin-top: -5px;
+  border: 1px solid var(--ink);
+  border-radius: 50%;
+  background: var(--paper);
+  transition: background 120ms;
+}
+.seek:hover::-webkit-slider-thumb, .vol:hover::-webkit-slider-thumb { background: var(--ink); }
+.seek::-moz-range-track, .vol::-moz-range-track { height: 1px; background: var(--rule); }
+.seek::-moz-range-thumb, .vol::-moz-range-thumb {
+  width: 9px;
+  height: 9px;
+  border: 1px solid var(--ink);
+  border-radius: 50%;
+  background: var(--paper);
+}
+.seek:hover::-moz-range-thumb, .vol:hover::-moz-range-thumb { background: var(--ink); }
+.seek:disabled, .vol:disabled { opacity: .4; cursor: default; }
+
+.player-right { display: flex; align-items: center; justify-content: flex-end; gap: 10px; min-width: 0; }
+.drive-line {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+.drive-line small { color: var(--ink-4); font-size: 10px; letter-spacing: .1em; }
+.drive-glyph { width: 14px; height: 14px; color: var(--ink-3); }
+
+/* ------------------------------------------------------------ queue panel */
+
+.queue-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 40;
+  width: var(--panel-w);
+  display: flex;
+  flex-direction: column;
+  padding: 22px 26px 26px;
+  background: var(--paper);
+  border-left: 1px solid var(--rule);
+  overflow-y: auto;
+  animation: panel-in 170ms ease-out;
+}
+@keyframes panel-in { from { transform: translateX(12px); opacity: 0 } to { transform: none; opacity: 1 } }
+
+.lb-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.queue-panel .display { margin-top: 16px; font-size: 26px; }
+.queue-panel .panel-section:last-of-type { border-bottom: 0; }
+/* The panel is a scrolling column, so nothing in it may shrink: the cover
+   takes its height from an aspect ratio and would otherwise collapse to
+   nothing rather than push the page down. Only the queue list grows. */
+.queue-panel > * { flex: none; }
+.panel-section--grow { display: flex; flex-direction: column; flex: 1 0 auto; }
+
+.q-cover {
+  margin-top: 20px;
+  aspect-ratio: 1;
+  background: var(--paper-3);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  color: var(--ink-4);
+}
+.q-cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.q-cover svg { width: 38px; height: 38px; stroke-width: 1; }
+
+.lb-buttons { display: grid; gap: 7px; margin-top: 12px; }
+.lb-buttons .btn { justify-content: flex-start; }
+
+.q-head { display: flex; align-items: center; justify-content: space-between; }
+.q-list { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 1px; }
+.q-list li { display: flex; align-items: center; gap: 10px; }
+.q-list button {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 2.5ch 1fr auto;
+  gap: 10px;
+  align-items: baseline;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: var(--radius);
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.q-list button:hover { background: var(--paper-3); }
+.q-list li[aria-current="true"] button { background: var(--paper-3); box-shadow: inset 2px 0 0 var(--ink); }
+.q-list .n {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ink-4);
+  font-variant-numeric: tabular-nums;
+}
+.q-list .t { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12.5px; }
+.q-list .t small { display: block; color: var(--ink-3); font-size: 11px; }
+.q-list .d { font-family: var(--mono); font-size: 10px; color: var(--ink-4); }
+.q-empty { padding: 16px 4px; color: var(--ink-4); font-size: 12.5px; }
+
+/* ------------------------------------------------------------------ dialog */
+
+.dialog {
+  width: min(640px, calc(100vw - 32px));
+  max-height: 84vh;
+  padding: 0;
+  border: 1px solid var(--ink);
+  border-radius: var(--radius);
+  background: var(--paper);
+  color: var(--ink);
+  overflow: hidden;
+}
+.dialog::backdrop { background: rgba(255, 255, 255, .72); }
+.dialog-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--rule);
+}
+.dialog-head .label { font-size: 11px; color: var(--ink); }
+.dialog-body { padding: 20px; overflow-y: auto; max-height: calc(84vh - 58px); }
+.dialog-body section + section { margin-top: 26px; padding-top: 22px; border-top: 1px solid var(--rule-soft); }
+.dialog-body h3.label { margin-bottom: 10px; color: var(--ink); }
+
+/* A list of things to pick one of — playlists, mostly. */
+.pick-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; max-height: 46vh; overflow-y: auto; }
+.pick-list button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 11px;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: var(--paper);
+  color: inherit;
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+.pick-list button:hover { border-color: var(--ink); }
+.pick-list small {
+  margin-left: auto;
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--ink-4);
+}
+
+.sources { list-style: none; margin: 0 0 12px; padding: 0; display: grid; gap: 7px; }
+.sources li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 11px;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  font-size: 12.5px;
+}
+.sources code { flex: 1; color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sources .tag {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--ink-4);
+}
+.sources .muted { margin: 0; }
+/* The empty state is a sentence, not a row — drop the box so it does not read
+   as an input field. */
+.sources-empty { border: 0 !important; padding: 0 !important; }
+
+.source-add { display: grid; grid-template-columns: 1fr auto auto; gap: 7px; }
+.source-add #source-path { grid-column: 1 / -1; }
+
+.report {
+  margin: 0;
+  padding: 12px;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: var(--paper-2);
+  color: var(--ink-2);
+  max-height: 220px;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* ------------------------------------------------------------------- toast */
+
+.toast {
+  position: fixed;
+  bottom: 94px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 60;
+  padding: 11px 18px;
+  border: 1px solid var(--ink);
+  border-radius: var(--radius);
+  background: var(--ink);
+  color: var(--paper);
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+.toast.bad { background: var(--danger); border-color: var(--danger); }
+
+/* -------------------------------------------------------------- responsive */
+
+@media (max-width: 1240px) {
+  .track { grid-template-columns: 30px 1fr 8ch 26px; }
+  .track-album { display: none; }
+  .search input { width: 150px; }
+}
+
+@media (max-width: 1080px) {
+  :root { --panel-w: 330px; }
+  .drive-line { display: none; }
+}
+
+@media (max-width: 900px) {
+  .body { grid-template-columns: 1fr; }
+  .sidebar { display: none; }
+  .queue-panel { width: 100%; border-left: 0; }
+  .strip { display: none; }
+  .hero { grid-template-columns: 1fr; align-items: start; }
+  .hero-cover { max-width: 200px; }
+  .vol, #btn-mute { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition-duration: 1ms !important; animation-duration: 1ms !important; }
+  .track-index-bars i { animation: none; }
+}

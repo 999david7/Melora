@@ -14,6 +14,10 @@ struct UpdateTests {
         #expect(!release.isNewer(than: "1.2.0"))
         #expect(release.asset(architecture: "arm64") != nil)
         #expect(release.asset(architecture: "x86_64") == nil)
+        let universal = AppRelease(tag_name: "v1.2.0", html_url: AppUpdates.repository, draft: false, prerelease: false,
+            assets: [.init(name: "Melora-macos-universal.zip", browser_download_url: URL(string: "https://github.com/999david7/Melora/releases/download/v1.2.0/Melora-macos-universal.zip")!, digest: nil)])
+        #expect(universal.asset(architecture: "arm64") != nil)
+        #expect(universal.asset(architecture: "x86_64") != nil)
     }
 
     @Test func updatesRequireMatchingDigestAndSafeArchivePaths() throws {

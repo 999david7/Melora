@@ -18,6 +18,17 @@ builds for your Mac's architecture, creates the icon and signs the app locally.
 Distribution to other Macs requires Developer ID signing and notarization.
 You can also open `Package.swift` in Xcode to develop the app.
 
+Download a DMG from [GitHub Releases](https://github.com/999david7/Melora/releases),
+open it, and drag Melora onto the Applications shortcut. To create a DMG locally:
+
+```sh
+MELORA_UNIVERSAL=1 ./scripts/build-app.sh
+./scripts/create-dmg.sh
+```
+
+The universal DMG contains both Apple Silicon and Intel code. Omitting
+`MELORA_UNIVERSAL=1` builds a smaller app for your Mac's architecture.
+
 ## App updates and releases
 
 Melora checks this repository's latest stable GitHub release at launch and every
@@ -42,8 +53,8 @@ git push origin v1.0.1
 ```
 
 The `macOS release` GitHub Actions workflow builds Apple Silicon and Intel apps,
-sets their bundle versions from the tag, and uploads `Melora-macos-arm64.zip` and
-`Melora-macos-x86_64.zip` before publishing the release. GitHub computes the asset
+sets their bundle versions from the tag, and uploads architecture-specific ZIPs
+for in-app updates and DMGs for installation before publishing the release. GitHub computes the asset
 digests used by the installer. These builds use local ad-hoc signatures; the
 workflow does not provide Developer ID signing or notarization.
 

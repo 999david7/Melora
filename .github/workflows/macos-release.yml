@@ -33,11 +33,15 @@ jobs:
       - name: Test native app
         run: ./macOS/scripts/test.sh
       - name: Package app
-        run: ditto -c -k --keepParent macOS/dist/Melora.app 'Melora-macos-${{ matrix.architecture }}.zip'
+        run: |
+          ditto -c -k --keepParent macOS/dist/Melora.app 'Melora-macos-${{ matrix.architecture }}.zip'
+          ./macOS/scripts/create-dmg.sh "$PWD/Melora-macos-${{ matrix.architecture }}.dmg"
       - uses: actions/upload-artifact@v7.0.2
         with:
           name: Melora-macos-${{ matrix.architecture }}
-          path: Melora-macos-${{ matrix.architecture }}.zip
+          path: |
+            Melora-macos-${{ matrix.architecture }}.zip
+            Melora-macos-${{ matrix.architecture }}.dmg
   release:
     needs: build
     runs-on: ubuntu-latest
@@ -58,4 +62,5 @@ jobs:
             gh release create "$RELEASE_TAG" --title "Melora ${RELEASE_TAG#v}" --generate-notes --verify-tag --draft
           fi
           gh release upload "$RELEASE_TAG" Melora-macos-*.zip --clobber
+          gh release upload "$RELEASE_TAG" Melora-macos-*.dmg --clobber
           gh release edit "$RELEASE_TAG" --draft=false

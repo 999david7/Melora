@@ -27,12 +27,12 @@ struct AppRelease: Decodable {
     let assets: [Asset]
 
     func asset(architecture: String) -> Asset? {
-        assets.first {
-            $0.name == "Melora-macos-\(architecture).zip" &&
+        [architecture, "universal"].compactMap { platform in assets.first {
+            $0.name == "Melora-macos-\(platform).zip" &&
             $0.browser_download_url.scheme == "https" &&
             $0.browser_download_url.host == "github.com" &&
             $0.browser_download_url.path.hasPrefix("/999david7/Melora/releases/download/")
-        }
+        } }.first
     }
     func isNewer(than installed: String) -> Bool {
         guard !draft, !prerelease, let version = AppVersion(tag_name), let current = AppVersion(installed) else { return false }

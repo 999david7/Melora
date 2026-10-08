@@ -1,5 +1,14 @@
 # Melora
 
+**Native macOS app:** Melora now includes a standalone SwiftUI app with music
+link downloads, cover art, offline playback, search and favourites. Build it with
+`cd macOS && ./scripts/build-app.sh`, then open `dist/Melora.app`.
+See [the macOS guide](macOS/README.md) for setup and supported imports.
+The macOS app checks GitHub releases and offers to install newer versions.
+Version tags build release downloads for Apple Silicon and Intel automatically.
+
+The documentation below describes the original cross-platform Node/web version.
+
 A music library that lives on your external SSD and stays locked until that
 exact drive is plugged in.
 
@@ -63,6 +72,10 @@ cd Melora
 npm install
 ```
 
+On Windows there is nothing to type: double-click `start.bat`. It installs the
+dependencies the first time, starts the server and opens the interface once it
+is answering. Arguments are passed through, so `start.bat --port 5000` works.
+
 ## Set up
 
 Plug in the drive, then create the library on it:
@@ -81,6 +94,8 @@ Then start it:
 ```bash
 npm start          # → http://127.0.0.1:4610
 ```
+
+or on Windows, double-click `start.bat`.
 
 You can also do the whole setup in the browser: run `npm start` first and the
 page walks you through picking a folder, with shortcuts to wherever your system

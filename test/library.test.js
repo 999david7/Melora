@@ -6,7 +6,7 @@ import { ensureArt } from '../src/art.js';
 import { Library } from '../src/library.js';
 import { pruneMissing, scanLibrary, verifyLibrary } from '../src/scanner.js';
 import { initLibrary } from '../src/volume.js';
-import { cleanup, copyTrack, tempDir, writeCover, writeTaggedMp3, writeTrack } from './helpers.js';
+import { cleanup, closeBeforeCleanup, copyTrack, tempDir, writeCover, writeTaggedMp3, writeTrack } from './helpers.js';
 
 after(cleanup);
 
@@ -20,7 +20,7 @@ async function makeLibrary() {
   return library;
 }
 
-after(() => { for (const library of open) library.close(); });
+closeBeforeCleanup(() => { for (const library of open) library.close(); });
 
 describe('scanning', () => {
   test('indexes audio and mirrors the directory tree into folders', async () => {

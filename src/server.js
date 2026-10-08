@@ -426,9 +426,14 @@ export function createServer({ config = loadConfig() } = {}) {
       ensureArt(library.path, { source: track.art_source, absPath, key: track.art_key, size }),
     );
     if (!file) {
-      // The art has gone or cannot be decoded. Forget it so the grid draws a
-      // blank record immediately next time instead of retrying every scroll.
-      if (state.library === library) {
+      // Forget the art only when the file it came from has actually gone, so
+      // the grid draws a blank record immediately next time instead of
+      // retrying every scroll. A render that failed while the file is still
+      // sitting there is worth trying again: clearing the row on a passing
+      // failure would hide a cover that is really on the drive until the file
+      // itself changed and a scan looked at it afresh.
+      const sourceGone = await fsp.stat(absPath).then(() => false, () => true);
+      if (sourceGone && state.library === library) {
         library.db
           .prepare('UPDATE tracks SET art_source = NULL, art_key = NULL, art_path = NULL WHERE id = ?')
           .run(track.id);

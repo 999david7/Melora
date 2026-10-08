@@ -6,7 +6,7 @@ import { Library } from '../src/library.js';
 import { readPlaylistFile } from '../src/playlists.js';
 import { scanLibrary } from '../src/scanner.js';
 import { initLibrary } from '../src/volume.js';
-import { cleanup, tempDir, writeTrack } from './helpers.js';
+import { cleanup, closeBeforeCleanup, tempDir, writeTrack } from './helpers.js';
 
 after(cleanup);
 
@@ -33,7 +33,7 @@ async function stocked() {
   return library;
 }
 
-after(() => { for (const library of open) library.close(); });
+closeBeforeCleanup(() => { for (const library of open) library.close(); });
 
 describe('playlist files', () => {
   test('a playlist is a real .m3u8 on the drive', async () => {

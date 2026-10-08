@@ -16,6 +16,7 @@ import sharp from 'sharp';
  */
 
 const roots = [];
+const closers = [];
 
 export async function tempDir(prefix = 'melora-test-') {
   const dir = await fsp.mkdtemp(path.join(os.tmpdir(), prefix));
@@ -23,8 +24,23 @@ export async function tempDir(prefix = 'melora-test-') {
   return dir;
 }
 
+/**
+ * Register something holding a file open — a Library, a server — to be closed
+ * before the temp directories are removed. Windows refuses to unlink a file
+ * that is still open, so an open index.db turns cleanup into an EBUSY failure
+ * rather than the no-op it is on Linux and macOS.
+ */
+export function closeBeforeCleanup(close) {
+  closers.push(close);
+}
+
 export async function cleanup() {
-  await Promise.all(roots.splice(0).map((dir) => fsp.rm(dir, { recursive: true, force: true })));
+  for (const close of closers.splice(0)) await close();
+  await Promise.all(
+    roots
+      .splice(0)
+      .map((dir) => fsp.rm(dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 50 })),
+  );
 }
 
 /** Point config at a scratch directory before anything reads or writes it. */

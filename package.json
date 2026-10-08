@@ -34,7 +34,7 @@
     "LICENSE"
   ],
   "dependencies": {
-    "better-sqlite3": "^11.7.0",
+    "better-sqlite3": "^12.11.1",
     "express": "^4.21.2",
     "music-metadata": "^11.15.0",
     "sharp": "^0.33.5"

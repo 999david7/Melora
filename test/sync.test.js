@@ -6,7 +6,7 @@ import { Library } from '../src/library.js';
 import { scanLibrary } from '../src/scanner.js';
 import { normaliseSource, syncSources } from '../src/sync.js';
 import { initLibrary } from '../src/volume.js';
-import { cleanup, copyTrack, listFiles, tempDir, writeCover, writeTrack } from './helpers.js';
+import { cleanup, closeBeforeCleanup, copyTrack, listFiles, tempDir, writeCover, writeTrack } from './helpers.js';
 
 after(cleanup);
 
@@ -20,7 +20,7 @@ async function makeLibrary() {
   return library;
 }
 
-after(() => { for (const library of open) library.close(); });
+closeBeforeCleanup(() => { for (const library of open) library.close(); });
 
 describe('normaliseSource', () => {
   test('fills in the defaults', () => {

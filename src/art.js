@@ -51,13 +51,19 @@ export async function ensureArt(libraryPath, { source, absPath, key, size = 'thu
     // Not cached yet.
   }
 
+  // Both ends of the render go through node's fs rather than sharp's own file
+  // handling: libvips opens paths with the plain Win32 calls, which give up at
+  // 260 characters, while node uses the long-path form. A library a few levels
+  // down a Windows drive — or an album with a wordy name — would otherwise
+  // fail to render a single cover, and the failure looks exactly like art that
+  // cannot be decoded.
   let input;
   if (source === 'embedded') {
     input = await readEmbeddedArt(absPath);
-    if (!input) return null;
   } else {
-    input = absPath;
+    input = await fsp.readFile(absPath).catch(() => null);
   }
+  if (!input) return null;
 
   const { edge, quality } = SIZES[size];
   await fsp.mkdir(path.dirname(target), { recursive: true });
@@ -66,10 +72,11 @@ export async function ensureArt(libraryPath, { source, absPath, key, size = 'thu
   // for the same uncached cover cannot serve each other a partial file.
   const tmp = `${target}.${process.pid}-${Math.random().toString(36).slice(2, 8)}.tmp`;
   try {
-    await sharp(input, { failOn: 'none' })
+    const rendered = await sharp(input, { failOn: 'none' })
       .resize({ width: edge, height: edge, fit: 'inside', withoutEnlargement: true })
       .webp({ quality, effort: 4 })
-      .toFile(tmp);
+      .toBuffer();
+    await fsp.writeFile(tmp, rendered);
     await fsp.rename(tmp, target);
     return target;
   } catch {

@@ -13,3 +13,8 @@ Thumbs.db
 .idea/
 .vscode/
 *.swp
+
+# Native macOS build products
+macOS/.build/
+macOS/dist/
+macOS/.swiftpm/

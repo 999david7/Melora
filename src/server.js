@@ -2,12 +2,14 @@ import fsp from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import express from 'express';
+import sharp from 'sharp';
 import { cacheStats, clearCache, ensureArt, isValidSize } from './art.js';
 import { CONTENT_TYPES } from './audio.js';
 import { loadConfig, saveConfig } from './config.js';
 import { JobManager, publicView } from './jobs.js';
 import { Library } from './library.js';
 import { safeJoin } from './paths.js';
+import { asText, COMMANDS, NowPlaying } from './remote.js';
 import { pruneMissing, scanLibrary, verifyLibrary } from './scanner.js';
 import { normaliseSource, syncSources } from './sync.js';
 import { mapPool } from './util.js';
@@ -35,6 +37,7 @@ export function createServer({ config = loadConfig() } = {}) {
     // would start a hundred decodes at once.
     renderSlots: 4,
     renderQueue: [],
+    nowPlaying: new NowPlaying(),
   };
 
   const watcher = new VolumeWatcher({
@@ -67,6 +70,7 @@ export function createServer({ config = loadConfig() } = {}) {
     state.jobs.cancelAll();
     state.library?.close();
     state.library = null;
+    state.nowPlaying.clear();
   });
 
   watcher.on('error', (err) => console.error(`[melora] volume watcher: ${err.message}`));
@@ -449,6 +453,74 @@ export function createServer({ config = loadConfig() } = {}) {
     });
   }));
 
+  // --- now playing, for desktop widgets ---------------------------------------
+
+  /**
+   * Widgets drive playback with POSTs from outside the browser. A web page can
+   * send a POST to 127.0.0.1 too, but not with a custom header unless this
+   * server answers the CORS preflight, which it never does.
+   */
+  const fromWidget = (req, res, next) =>
+    req.get('x-melora-remote') === '1' ? next() : fail(res, 403, 'missing X-Melora-Remote header');
+
+  const widgetBase = (req) => `http://${req.headers.host}`;
+
+  app.put('/api/now-playing', gate, wrap(async (req, res) => {
+    if (!state.nowPlaying.update(req.body?.client, req.body)) return fail(res, 400, 'client is required');
+    return res.json({ ok: true });
+  }));
+
+  app.get('/api/now-playing', wrap(async (req, res) => {
+    // Locked is a state a widget shows, not an error it has to interpret.
+    if (!state.library) return res.json({ locked: true, active: false, playing: false, controllable: false, track: null });
+    const view = state.nowPlaying.view();
+    const art = view.track?.hasArt ? `${widgetBase(req)}/api/now-playing/art?track=${view.track.id}` : null;
+    return res.json({ locked: false, ...view, art });
+  }));
+
+  app.get('/api/now-playing.txt', wrap(async (req, res) => {
+    const view = state.library ? state.nowPlaying.view() : { locked: true, active: false };
+    res.type('text/plain; charset=utf-8').send(asText(view, widgetBase(req)));
+  }));
+
+  /** The current cover as a JPEG, which every widget engine can draw. */
+  app.get('/api/now-playing/art', gate, wrap(async (req, res) => {
+    const id = state.nowPlaying.view().track?.id;
+    if (!id) return fail(res, 404, 'nothing is playing');
+    const track = state.library.getTrack(id);
+    if (!track?.art_key) return fail(res, 404, 'this track has no cover art');
+    const library = state.library;
+    const absPath =
+      track.art_source === 'embedded' ? library.absPathOf(track) : safeJoin(library.path, track.art_path ?? '');
+    const file = await renderLimited(() =>
+      ensureArt(library.path, { source: track.art_source, absPath, key: track.art_key, size: 'thumb' }),
+    );
+    if (!file) return fail(res, 404, 'the cover art could not be read');
+    const jpeg = await sharp(file).resize(300, 300, { fit: 'cover' }).jpeg({ quality: 82 }).toBuffer();
+    res.setHeader('Cache-Control', 'no-store, private');
+    res.setHeader('Content-Security-Policy', "default-src 'none'; sandbox");
+    return res.type('image/jpeg').send(jpeg);
+  }));
+
+  app.post('/api/remote/:command', fromWidget, gate, wrap(async (req, res) => {
+    const { command } = req.params;
+    if (!COMMANDS.has(command)) return fail(res, 404, 'unknown command');
+    if (!state.nowPlaying.command(command)) return fail(res, 409, 'Melora is not open in a browser tab');
+    return res.json({ ok: true });
+  }));
+
+  /** The playing tab listens here for widget commands. */
+  app.get('/api/remote/events', gate, (req, res) => {
+    res.writeHead(200, {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-store',
+      Connection: 'keep-alive',
+    });
+    res.write('retry: 3000\n\n');
+    const detach = state.nowPlaying.attach(req.query.client, res);
+    req.on('close', detach);
+  });
+
   // --- albums and artists ---------------------------------------------------
 
   app.get('/api/albums', gate, wrap(async (req, res) => {
@@ -659,6 +731,8 @@ export async function startServer(options = {}) {
 
   await watcher.check();
   watcher.start();
+  const pinger = setInterval(() => state.nowPlaying.ping(), 25_000);
+  pinger.unref();
 
   const server = await new Promise((resolve, reject) => {
     const listener = app.listen(port, host, () => resolve(listener));
@@ -672,11 +746,15 @@ export async function startServer(options = {}) {
     server,
     url: `http://${host === '0.0.0.0' ? '127.0.0.1' : host}:${server.address().port}`,
     async close() {
+      clearInterval(pinger);
       watcher.stop();
       state.jobs.cancelAll();
       state.library?.close();
       state.library = null;
-      await new Promise((resolve) => server.close(resolve));
+      const closed = new Promise((resolve) => server.close(resolve));
+      // Open event streams would otherwise hold server.close() forever.
+      server.closeAllConnections?.();
+      await closed;
     },
   };
 }

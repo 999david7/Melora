@@ -123,6 +123,24 @@ when present. Video imports use the source's thumbnail; missing artwork gets
 a neutral disc placeholder. The app does not claim to identify official album art
 when the source only provides a video thumbnail.
 
+## Desktop widget
+
+Melora includes a **Now Playing** widget in small, medium and large sizes. Open
+Melora once, then right-click the desktop, choose **Edit Widgets…** and search
+for Melora. It shows the song, artist, cover and progress, with play/pause
+(all sizes), previous and next (medium and large) and the next songs (large).
+Clicking elsewhere on the widget opens Melora.
+
+The widget is a sandboxed extension that can only read
+`~/Library/Application Support/Melora/Widget/`, where Melora writes the current
+song and a small cover. Its buttons work while Melora is running; quitting
+Melora shows the widget as stopped.
+
+`scripts/build-app.sh` builds the widget into `Melora.app/Contents/PlugIns/`.
+The buttons rely on App Intents metadata, which the script generates with
+`appintentsmetadataprocessor` from Xcode. With only the Command Line Tools,
+the widget still shows what is playing but its buttons do not respond.
+
 ## Your library
 
 Default location: `~/Music/Melora`. Settings lets you choose an existing native

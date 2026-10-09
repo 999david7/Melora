@@ -142,6 +142,15 @@ command on your `PATH`.
 track, or use `N` and `P`. `F` favourites what is playing, `S` shuffles, `M`
 mutes, `Q` shows the queue, `/` jumps to search, `Esc` closes.
 
+## Desktop widgets
+
+Melora shows what is playing, with play/pause, previous and next, in desktop
+widgets: a [Rainmeter](https://www.rainmeter.net) skin on Windows, a KDE Plasma
+widget on Linux, and a mini player window at `http://127.0.0.1:4610/widget/` on
+any system. It also appears in the system media controls (the Windows media
+flyout and MPRIS on Linux). See [the widgets guide](widgets/README.md) for setup.
+The native macOS app has its own WidgetKit widget.
+
 ## Cover art
 
 Melora looks inside the file first — an embedded picture is what the person who

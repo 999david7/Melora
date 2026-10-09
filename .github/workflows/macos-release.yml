@@ -30,6 +30,11 @@ jobs:
           ./macOS/scripts/build-app.sh
           codesign --verify --deep --strict macOS/dist/Melora.app
           lipo -verify_arch '${{ matrix.architecture }}' macOS/dist/Melora.app/Contents/MacOS/Melora
+          WIDGETS=macOS/dist/Melora.app/Contents/PlugIns/MeloraWidgets.appex
+          lipo -verify_arch '${{ matrix.architecture }}' "$WIDGETS/Contents/MacOS/MeloraWidgets"
+          # Without this metadata the widget's buttons do nothing.
+          test -f "$WIDGETS/Contents/Resources/Metadata.appintents/extract.actionsdata"
+          codesign -d --entitlements - "$WIDGETS" 2>/dev/null | grep com.apple.security.app-sandbox > /dev/null
       - name: Test native app
         run: ./macOS/scripts/test.sh
       - name: Package app
@@ -48,10 +53,19 @@ jobs:
     permissions:
       contents: write
     steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          path: source
       - uses: actions/download-artifact@v8.0.2
         with:
           pattern: Melora-macos-*
           merge-multiple: true
+      - name: Package desktop widgets
+        run: |
+          # Rainmeter skin: unzip into Documents\Rainmeter\Skins.
+          (cd source/widgets/windows && zip -qr "$GITHUB_WORKSPACE/Melora-widget-windows-rainmeter.zip" Melora)
+          # A .plasmoid is a zip of the package contents; install with kpackagetool6 or Add Widgets → Install from file.
+          (cd source/widgets/linux/plasma/app.melora.nowplaying && zip -qr "$GITHUB_WORKSPACE/Melora-widget-linux-plasma.plasmoid" .)
       - name: Publish release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -63,4 +77,5 @@ jobs:
           fi
           gh release upload "$RELEASE_TAG" Melora-macos-*.zip --clobber
           gh release upload "$RELEASE_TAG" Melora-macos-*.dmg --clobber
+          gh release upload "$RELEASE_TAG" Melora-widget-windows-rainmeter.zip Melora-widget-linux-plasma.plasmoid --clobber
           gh release edit "$RELEASE_TAG" --draft=false

@@ -1,0 +1,15 @@
+{
+    "KPlugin": {
+        "Authors": [{ "Name": "Melora" }],
+        "Category": "Multimedia",
+        "Description": "What Melora is playing, with playback controls",
+        "Icon": "media-optical-audio",
+        "Id": "app.melora.nowplaying",
+        "License": "MIT",
+        "Name": "Melora Now Playing",
+        "Version": "1.0",
+        "Website": "https://github.com/999david7/Melora"
+    },
+    "KPackageStructure": "Plasma/Applet",
+    "X-Plasma-API-Minimum-Version": "6.0"
+}

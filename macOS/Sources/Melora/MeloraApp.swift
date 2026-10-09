@@ -6,6 +6,7 @@ struct MeloraApp: App {
     @StateObject private var library = LibraryStore()
     @StateObject private var player = MusicPlayer()
     @StateObject private var updates = AppUpdates()
+    @StateObject private var widgets = WidgetBridge()
 
     var body: some Scene {
         WindowGroup {
@@ -16,6 +17,7 @@ struct MeloraApp: App {
                 .frame(minWidth: 980, minHeight: 680)
                 .preferredColorScheme(.light)
                 .tint(Theme.ink)
+                .onAppear { widgets.start(player: player, library: library) }
                 .task {
                     while !Task.isCancelled {
                         await updates.check(automatically: true, canInstall: { !library.isBusy })

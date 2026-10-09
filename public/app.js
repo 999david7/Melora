@@ -1,4 +1,5 @@
 import { Player } from './player.js';
+import { connectRemote } from './remote.js';
 import {
   $, askChoice, askFields, askText, clear, confirmAction, debounce, el, formatBytes, formatDate,
   formatDuration, formatSpan, icon, plural, toast,
@@ -1682,6 +1683,7 @@ function markSaved(label) {
 }
 
 wire();
+connectRemote(player);
 renderPlayer();
 refreshStatus();
 // The drive can be pulled at any moment; this poll is how the UI finds out.

@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<meta name="robots" content="noindex, nofollow">
+<title>Melora — Now Playing</title>
+<link rel="stylesheet" href="/widget/widget.css">
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<link rel="manifest" href="/widget/manifest.webmanifest">
+</head>
+<body>
+<!-- A remote for the Melora tab that is playing: it shows what that tab
+     reports and sends it commands. It plays nothing itself. -->
+<svg class="sprite" aria-hidden="true" focusable="false">
+  <symbol id="i-disc" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="2.2"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M7 4.5 19 12 7 19.5z"/></symbol>
+  <symbol id="i-pause" viewBox="0 0 24 24"><path d="M9 5v14M15 5v14"/></symbol>
+  <symbol id="i-prev" viewBox="0 0 24 24"><path d="M18 5.5 8 12l10 6.5z"/><path d="M6 5v14"/></symbol>
+  <symbol id="i-next" viewBox="0 0 24 24"><path d="M6 5.5 16 12 6 18.5z"/><path d="M18 5v14"/></symbol>
+</svg>
+<main class="widget">
+  <div class="art" id="art"><svg><use href="#i-disc"/></svg><img id="art-img" alt="" hidden></div>
+  <div class="body">
+    <p class="caption" id="caption">Melora</p>
+    <p class="title" id="title">Nothing playing</p>
+    <p class="sub" id="sub">Open Melora in your browser to play</p>
+    <div class="progress"><span id="bar"></span></div>
+    <div class="row">
+      <span class="time" id="time">0:00</span>
+      <div class="controls">
+        <button id="prev" type="button" aria-label="Previous"><svg><use href="#i-prev"/></svg></button>
+        <button id="toggle" type="button" class="primary" aria-label="Play"><svg><use id="toggle-glyph" href="#i-play"/></svg></button>
+        <button id="next" type="button" aria-label="Next"><svg><use href="#i-next"/></svg></button>
+      </div>
+      <span class="time" id="duration">0:00</span>
+    </div>
+  </div>
+</main>
+<script type="module" src="/widget/widget.js"></script>
+</body>
+</html>

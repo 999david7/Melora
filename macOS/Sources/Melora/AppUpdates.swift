@@ -153,7 +153,7 @@ final class AppUpdates: ObservableObject {
             if let minimum = bundle.object(forInfoDictionaryKey: "LSMinimumSystemVersion") as? String,
                let required = AppVersion(minimum), let installed = AppVersion("\(os.majorVersion).\(os.minorVersion).\(os.patchVersion)"),
                installed < required { throw MeloraError.message("This release needs macOS \(minimum) or newer.") }
-            _ = try await DownloadService.run(URL(fileURLWithPath: "/usr/bin/lipo"), arguments: ["-verify_arch", Self.architecture, executable.path], logFolder: work, timeout: 30) { _, _ in }
+            _ = try await DownloadService.run(URL(fileURLWithPath: "/usr/bin/lipo"), arguments: [executable.path, "-verify_arch", Self.architecture], logFolder: work, timeout: 30) { _, _ in }
             _ = try await DownloadService.run(URL(fileURLWithPath: "/usr/bin/codesign"), arguments: ["--verify", "--deep", "--strict", candidate.path], logFolder: work, timeout: 30) { _, _ in }
             let prepared = app.deletingLastPathComponent().appendingPathComponent(".Melora-update-\(UUID()).app")
             let backup = app.deletingLastPathComponent().appendingPathComponent(".Melora-backup-\(UUID()).app")

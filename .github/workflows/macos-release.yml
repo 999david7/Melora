@@ -29,9 +29,9 @@ jobs:
           export MELORA_VERSION="${RELEASE_TAG#v}"
           ./macOS/scripts/build-app.sh
           codesign --verify --deep --strict macOS/dist/Melora.app
-          lipo -verify_arch '${{ matrix.architecture }}' macOS/dist/Melora.app/Contents/MacOS/Melora
+          lipo macOS/dist/Melora.app/Contents/MacOS/Melora -verify_arch '${{ matrix.architecture }}'
           WIDGETS=macOS/dist/Melora.app/Contents/PlugIns/MeloraWidgets.appex
-          lipo -verify_arch '${{ matrix.architecture }}' "$WIDGETS/Contents/MacOS/MeloraWidgets"
+          lipo "$WIDGETS/Contents/MacOS/MeloraWidgets" -verify_arch '${{ matrix.architecture }}'
           # Without this metadata the widget's buttons do nothing.
           test -f "$WIDGETS/Contents/Resources/Metadata.appintents/extract.actionsdata"
           codesign -d --entitlements - "$WIDGETS" 2>/dev/null | grep com.apple.security.app-sandbox > /dev/null

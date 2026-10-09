@@ -14,7 +14,9 @@ let package = Package(
         // Packaged by scripts/build-app.sh as Melora.app/Contents/PlugIns/MeloraWidgets.appex.
         .executableTarget(name: "MeloraWidgets", dependencies: ["MeloraWidgetShared"],
                           swiftSettings: [.unsafeFlags(["-application-extension"])],
-                          linkerSettings: [.unsafeFlags(["-Xlinker", "-application_extension"])]),
+                          // Like Xcode: extensions start in Foundation's NSExtensionMain, which
+                          // sets up the extension context and then calls the WidgetBundle's main.
+                          linkerSettings: [.unsafeFlags(["-Xlinker", "-application_extension", "-Xlinker", "-e", "-Xlinker", "_NSExtensionMain"])]),
         .testTarget(name: "MeloraTests", dependencies: ["Melora", "MeloraWidgetShared"], resources: [.copy("Fixtures")])
     ],
     swiftLanguageModes: [.v5]

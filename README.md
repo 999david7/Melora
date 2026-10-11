@@ -62,6 +62,25 @@ melora serve          # → http://127.0.0.1:4610
   Finder and the next scan follows it by content hash, keeping its favourite,
   its note, its play count, and its place in every playlist.
 
+## Download
+
+Every [release](https://github.com/999david7/Melora/releases) has ready-made
+builds of this web version that include Node.js, so nothing else needs
+installing:
+
+- **Windows:** `Melora-windows-x64.zip`. Unzip it and double-click `Melora.exe`.
+- **Linux:** `Melora-linux-x64.tar.gz` or `Melora-linux-arm64.tar.gz`. Extract
+  it and run `./melora`.
+
+Started with no arguments, the executable runs the server and opens the
+interface in your browser. With arguments it is the `melora` command, so
+`Melora.exe init E:\Music` and `./melora sync ~/Music` work. Keep the `app`
+folder next to the executable. On macOS, use the native app instead.
+
+To build one yourself, run `node packaging/build-portable.mjs` with an official
+Node.js 24 build (Homebrew's Node can't make single executables). It packages
+for the computer it runs on and writes the archive to `dist-portable/`.
+
 ## Install
 
 Needs [Node.js](https://nodejs.org) 20.11 or newer.

@@ -52,7 +52,7 @@ git tag v1.0.1
 git push origin v1.0.1
 ```
 
-The `macOS release` GitHub Actions workflow builds Apple Silicon and Intel apps,
+The `Release` GitHub Actions workflow builds Apple Silicon and Intel apps,
 sets their bundle versions from the tag, and uploads architecture-specific ZIPs
 for in-app updates and DMGs for installation before publishing the release. GitHub computes the asset
 digests used by the installer. These builds use local ad-hoc signatures; the

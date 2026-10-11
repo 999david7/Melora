@@ -18,3 +18,6 @@ Thumbs.db
 macOS/.build/
 macOS/dist/
 macOS/.swiftpm/
+
+# Portable Windows/Linux builds
+dist-portable/

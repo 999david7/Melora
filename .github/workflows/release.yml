@@ -1,4 +1,4 @@
-name: macOS release
+name: Release
 on:
   push:
     tags: ['v*']
@@ -47,8 +47,35 @@ jobs:
           path: |
             Melora-macos-${{ matrix.architecture }}.zip
             Melora-macos-${{ matrix.architecture }}.dmg
+  portable:
+    strategy:
+      matrix:
+        include:
+          - runner: windows-latest
+            archive: Melora-windows-x64.zip
+          - runner: ubuntu-24.04
+            archive: Melora-linux-x64.tar.gz
+          - runner: ubuntu-24.04-arm
+            archive: Melora-linux-arm64.tar.gz
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version: 24
+      - name: Test web app
+        run: npm ci && npm test
+      - name: Build portable executable
+        shell: bash
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: MELORA_VERSION="${RELEASE_TAG#v}" node packaging/build-portable.mjs
+      - uses: actions/upload-artifact@v7.0.2
+        with:
+          name: ${{ matrix.archive }}
+          path: dist-portable/${{ matrix.archive }}
   release:
-    needs: build
+    needs: [build, portable]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -58,7 +85,7 @@ jobs:
           path: source
       - uses: actions/download-artifact@v8.0.2
         with:
-          pattern: Melora-macos-*
+          pattern: Melora-*
           merge-multiple: true
       - name: Package desktop widgets
         run: |
@@ -77,5 +104,6 @@ jobs:
           fi
           gh release upload "$RELEASE_TAG" Melora-macos-*.zip --clobber
           gh release upload "$RELEASE_TAG" Melora-macos-*.dmg --clobber
+          gh release upload "$RELEASE_TAG" Melora-windows-*.zip Melora-linux-*.tar.gz --clobber
           gh release upload "$RELEASE_TAG" Melora-widget-windows-rainmeter.zip Melora-widget-linux-plasma.plasmoid --clobber
           gh release edit "$RELEASE_TAG" --draft=false

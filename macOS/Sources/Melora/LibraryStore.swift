@@ -337,7 +337,12 @@ final class LibraryStore: ObservableObject {
         }
     }
 
-    private func existingTrack(for url: URL) -> Track? {
+    func job(for url: URL) -> ImportJob? {
+        let identity = ImportURL.sourceIdentity(url)
+        return jobs.last { ImportURL.sourceIdentity($0.url) == identity }
+    }
+
+    func existingTrack(for url: URL) -> Track? {
         let identity = ImportURL.sourceIdentity(url)
         return tracks.first {
             guard let source = $0.sourceURL.flatMap(URL.init(string:)),

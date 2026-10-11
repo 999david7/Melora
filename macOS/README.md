@@ -123,6 +123,17 @@ when present. Video imports use the source's thumbnail; missing artwork gets
 a neutral disc placeholder. The app does not claim to identify official album art
 when the source only provides a video thumbnail.
 
+## Explore new music
+
+Choose **Explore** in the sidebar or top bar to search for songs you don't have
+yet. Type a song, artist or album and press Return, or pick a genre such as
+**Lo-fi**, **Jazz** or **Film scores**. Results come from YouTube through yt-dlp
+and show the cover, channel, length and view count; nothing is downloaded until
+you choose **DOWNLOAD** (or **DOWNLOAD ALL**). Downloads join the normal import
+queue, so progress, cancellation and retry work as under **Downloads**. Songs
+already in your library show **PLAY** instead. **⌘F** focuses the Explore search
+while it is open. Exploring needs yt-dlp; downloading also needs FFmpeg.
+
 ## Desktop widget
 
 Melora includes a **Now Playing** widget in small, medium and large sizes. Open

@@ -27,6 +27,8 @@ struct ContentView: View {
     @ViewState<Bool> private var showQueue = false
     @ViewState<Bool> private var showNowPlaying = false
     @ViewState<Bool> private var showDownloads = false
+    @ViewState<Bool> private var showExplore = false
+    @StateObject private var explore = ExploreModel()
     @ViewState<MusicGroup?> private var selectedGroup: MusicGroup?
     @ViewState<UUID?> private var selectedPlaylist: UUID?
 
@@ -60,10 +62,13 @@ struct ContentView: View {
                 sidebar
                 Hairline(vertical: true)
                 VStack(spacing: 0) {
-                    filterbar
-                    toolbar
-                    if showDownloads { DownloadList() }
-                    else { collection }
+                    if showExplore && !showDownloads { ExploreView(model: explore) }
+                    else {
+                        filterbar
+                        toolbar
+                        if showDownloads { DownloadList() }
+                        else { collection }
+                    }
                 }.frame(maxWidth: .infinity, maxHeight: .infinity)
                 if showQueue { Hairline(vertical: true); queuePanel }
                 else if showNowPlaying && player.current != nil {
@@ -90,6 +95,8 @@ struct ContentView: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: .meloraFocusSearch)) { _ in
             showDownloads = false
+            // Explore focuses its own online search field.
+            guard !showExplore else { return }
             DispatchQueue.main.async { searchFocused = true }
         }
         .onChange(of: showNowPlaying) { _, shown in if shown { showQueue = false } }
@@ -100,8 +107,9 @@ struct ContentView: View {
         .onChange(of: library.importedPlaylistID) { _, id in
             guard let id else { return }
             selectedPlaylist = id; selectedGroup = nil; section = .tracks
-            sort = .playlist; search = ""; showDownloads = false
+            sort = .playlist; search = ""; showDownloads = false; showExplore = false
         }
+        .onChange(of: showDownloads) { _, shown in if shown { showExplore = false } }
     }
 
     private var topbar: some View {
@@ -109,6 +117,8 @@ struct ContentView: View {
             DiscMark().frame(width: 19, height: 19)
             Text("MELORA").font(.system(size: 12, design: .monospaced)).tracking(3.3)
             Spacer()
+            ChromeButton(title: "EXPLORE") { showExplore = true; showDownloads = false }
+            Text("/").foregroundStyle(Theme.faint)
             ChromeButton(title: "ADD FILES") { library.importFiles() }.disabled(library.isBusy)
             Text("/").foregroundStyle(Theme.faint)
             ChromeButton(title: "IMPORT LINK") { library.showImporter = true }
@@ -126,7 +136,10 @@ struct ContentView: View {
                 Spacer()
                 LineIconButton(icon: "folder.badge.plus", help: "Add audio files", size: 22) { library.importFiles() }.disabled(library.isBusy)
             }.padding(.leading, 20).padding(.trailing, 14).padding(.top, 18).padding(.bottom, 10)
-            sidebarRow("All music", icon: "folder", count: library.tracks.count, selected: playlist == nil && selectedGroup == nil && !showDownloads) { resetBrowse() }
+            sidebarRow("Explore", icon: "globe", count: nil, selected: showExplore && !showDownloads) { showExplore = true; showDownloads = false }
+                .help("Search and discover new songs online")
+                .padding(.bottom, 6)
+            sidebarRow("All music", icon: "folder", count: library.tracks.count, selected: playlist == nil && selectedGroup == nil && !showDownloads && !showExplore) { resetBrowse() }
             sidebarRow("Music", icon: "folder", count: library.tracks.count, selected: false, indent: 13) { resetBrowse() }
             Spacer(minLength: 30)
             Hairline()
@@ -141,7 +154,7 @@ struct ContentView: View {
                     VStack(spacing: 2) {
                         ForEach(library.playlists) { item in
                             sidebarRow(item.name, icon: "list.bullet", count: item.trackIDs.count, selected: selectedPlaylist == item.id) {
-                                selectedPlaylist = item.id; selectedGroup = nil; section = .tracks; sort = .playlist; showDownloads = false
+                                selectedPlaylist = item.id; selectedGroup = nil; section = .tracks; sort = .playlist; showDownloads = false; showExplore = false
                             }.contextMenu {
                                 Button("Rename…") { library.renamePlaylist(item) }
                                 Button("Duplicate playlist") { library.duplicatePlaylist(item) }
@@ -163,14 +176,14 @@ struct ContentView: View {
         }.frame(width: 244).background(Theme.surface)
     }
 
-    private func sidebarRow(_ title: String, icon: String, count: Int, selected: Bool, indent: CGFloat = 0, action: @escaping () -> Void) -> some View {
+    private func sidebarRow(_ title: String, icon: String, count: Int?, selected: Bool, indent: CGFloat = 0, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             HStack(spacing: 8) {
                 Image(systemName: "chevron.right").font(.system(size: 8)).foregroundStyle(Theme.faint)
                 Image(systemName: icon).font(.system(size: 12, weight: .light)).foregroundStyle(Theme.muted)
                 Text(title).font(.system(size: 13, weight: selected ? .medium : .regular)).lineLimit(1)
                 Spacer()
-                Text("\(count)").font(.system(size: 10, design: .monospaced)).foregroundStyle(Theme.faint)
+                if let count { Text("\(count)").font(.system(size: 10, design: .monospaced)).foregroundStyle(Theme.faint) }
             }.foregroundStyle(Theme.secondary).padding(.vertical, 7).padding(.horizontal, 9).padding(.leading, indent)
                 .background(selected ? Theme.paper3 : .clear)
                 .overlay(alignment: .leading) { if selected { Rectangle().fill(Theme.ink).frame(width: 2) } }
@@ -185,7 +198,7 @@ struct ContentView: View {
         HStack(spacing: 2) {
             ForEach(LibrarySection.allCases) { item in
                 Button {
-                    section = item; selectedGroup = nil; selectedPlaylist = nil; showDownloads = false; if sort == .playlist { sort = .album }
+                    section = item; selectedGroup = nil; selectedPlaylist = nil; showDownloads = false; showExplore = false; if sort == .playlist { sort = .album }
                 } label: {
                     HStack(spacing: 7) {
                         if item == section && !showDownloads { Circle().fill(Theme.ink).frame(width: 4, height: 4) }
@@ -373,7 +386,7 @@ struct ContentView: View {
         }.frame(width: 300).background(Theme.background)
     }
 
-    private func resetBrowse() { if sort == .playlist { sort = .album }; section = .tracks; selectedGroup = nil; selectedPlaylist = nil; showDownloads = false; search = "" }
+    private func resetBrowse() { if sort == .playlist { sort = .album }; section = .tracks; selectedGroup = nil; selectedPlaylist = nil; showDownloads = false; showExplore = false; search = "" }
     private func playAll() { if let first = filtered.first { player.play(first, in: filtered, root: library.root) } }
     private func count(_ section: LibrarySection) -> Int {
         switch section { case .tracks: library.tracks.count; case .albums: albums.count; case .artists: artists.count; case .favorites: library.tracks.filter(\.isFavorite).count }

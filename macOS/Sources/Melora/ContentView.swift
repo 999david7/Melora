@@ -377,12 +377,19 @@ struct ContentView: View {
                                     Text(track.artist).font(.system(size: 12)).foregroundStyle(Theme.muted).lineLimit(1)
                                 }
                                 Spacer(minLength: 0)
+                                if player.autoplayed.contains(track.id) { label("Autoplay").help("Added by autoplay") }
                             }.foregroundStyle(Theme.ink).padding(14).background(player.current?.id == track.id ? Theme.paper3 : .clear)
                         }.buttonStyle(ActionButtonStyle())
                         Hairline()
                     }
                 }
             }
+            Hairline()
+            VStack(alignment: .leading, spacing: 6) {
+                Toggle(isOn: $player.autoplay) { label("Autoplay") }.toggleStyle(.switch).controlSize(.mini).tint(Theme.ink)
+                Text("When the queue ends, keep playing similar songs from your library.")
+                    .font(.system(size: 11.5)).foregroundStyle(Theme.muted).fixedSize(horizontal: false, vertical: true)
+            }.padding(20)
         }.frame(width: 300).background(Theme.background)
     }
 

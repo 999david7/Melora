@@ -473,6 +473,58 @@ export class Library {
   }
 
   /**
+   * Tracks that sound like they belong after `id`, best first, for autoplay
+   * once a queue runs out.
+   *
+   * The match is made from what the index already knows — tags, and the
+   * playlists you put both tracks in — so it works offline and tells no one
+   * what you listen to. The same artist counts most, then a shared genre or
+   * playlist, then era, album and folder. A little randomness on top keeps a
+   * long evening from settling into one record on a loop.
+   *
+   * `exclude` is what has already played. When it covers every playable
+   * track, the library starts over rather than falling silent.
+   */
+  similarTracks(id, { exclude = [], limit = 1 } = {}) {
+    const seed = this.getTrack(id);
+    if (!seed) throw Object.assign(new Error('track not found'), { status: 404 });
+
+    const credits = [seed.artist, seed.album_artist].filter(Boolean).map((name) => name.toLowerCase());
+    const capped = Math.min(Math.max(Number(limit) || 1, 1), 50);
+    const score = `
+      (CASE WHEN LOWER(artist) IN (SELECT value FROM json_each(@credits))
+              OR LOWER(album_artist) IN (SELECT value FROM json_each(@credits)) THEN 4 ELSE 0 END)
+      + (CASE WHEN genre = @genre COLLATE NOCASE THEN 3 ELSE 0 END)
+      + (CASE WHEN id IN (SELECT track_id FROM playlist_items WHERE playlist_id IN
+              (SELECT playlist_id FROM playlist_items WHERE track_id = @seed)) THEN 2 ELSE 0 END)
+      + (CASE WHEN year IS NULL OR @year IS NULL THEN 0
+              WHEN ABS(year - @year) <= 3 THEN 2
+              WHEN ABS(year - @year) <= 8 THEN 1 ELSE 0 END)
+      + (CASE WHEN album_key = @album THEN 1 ELSE 0 END)
+      + (CASE WHEN folder_path = @folder THEN 1 ELSE 0 END)
+      + favorite`;
+    const query = this.db.prepare(
+      `SELECT ${TRACK_COLUMNS} FROM tracks
+       WHERE missing = 0 AND state = 'ready' AND id <> @seed
+         AND id NOT IN (SELECT value FROM json_each(@exclude))
+       ORDER BY ${score} + (ABS(RANDOM()) % 1000) / 400.0 DESC
+       LIMIT @limit`,
+    );
+    const params = {
+      seed: seed.id,
+      credits: JSON.stringify(credits),
+      genre: seed.genre,
+      year: seed.year,
+      album: seed.album_key,
+      folder: seed.folder_path,
+      limit: capped,
+    };
+    const ids = [...new Set(exclude.map(Number).filter(Number.isInteger))];
+    const items = query.all({ ...params, exclude: JSON.stringify(ids) });
+    return { items: items.length ? items : query.all({ ...params, exclude: '[]' }) };
+  }
+
+  /**
    * Remove a track from the library.
    *
    * The file is moved into `.melora/trash/`, never unlinked. Melora is pointed

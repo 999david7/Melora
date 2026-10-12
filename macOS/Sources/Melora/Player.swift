@@ -19,6 +19,13 @@ final class MusicPlayer: ObservableObject {
     @Published var repeatMode: RepeatMode = .off {
         didSet { preferences.set(repeatMode.rawValue, forKey: "playback.repeat") }
     }
+    @Published var autoplay = true {
+        didSet { preferences.set(autoplay, forKey: "playback.autoplay") }
+    }
+    /// Songs autoplay added after the queue ran out.
+    @Published private(set) var autoplayed: Set<UUID> = []
+    /// Supplied by the app: a song to follow the first argument, avoiding the played IDs.
+    var suggest: ((Track, Set<UUID>) -> Track?)?
     @Published var volume: Double = 0.8 {
         didSet {
             player.volume = Float(volume)
@@ -52,6 +59,7 @@ final class MusicPlayer: ObservableObject {
         }
         shuffle = preferences.bool(forKey: "playback.shuffle")
         repeatMode = preferences.string(forKey: "playback.repeat").flatMap(RepeatMode.init(rawValue:)) ?? .off
+        autoplay = preferences.object(forKey: "playback.autoplay") as? Bool ?? true
         player.volume = Float(volume)
         observer = player.addPeriodicTimeObserver(forInterval: CMTime(seconds: 0.5, preferredTimescale: 600), queue: .main) { [weak self] time in
             Task { @MainActor in
@@ -75,6 +83,7 @@ final class MusicPlayer: ObservableObject {
     }
 
     func play(_ track: Track, in tracks: [Track], root: URL) {
+        if tracks.map(\.id) != queue.map(\.id) { autoplayed = [] }
         queue = tracks
         shuffleTraversal.reset(ids: tracks.map(\.id), current: track.id)
         self.root = root
@@ -127,6 +136,7 @@ final class MusicPlayer: ObservableObject {
         player.replaceCurrentItem(with: nil)
         current = nil
         queue = []
+        autoplayed = []
         root = nil
         elapsed = 0
         duration = 0
@@ -144,12 +154,22 @@ final class MusicPlayer: ObservableObject {
         if shuffle {
             if let id = shuffleTraversal.next(after: current.id, ids: queue.map(\.id), repeating: repeatMode == .all),
                let track = queue.first(where: { $0.id == id }) { load(track) }
-            else { pause() }
+            else if !continueWithSimilar(after: current) { pause() }
             return
         }
         if index + 1 < queue.count { load(queue[index + 1]) }
         else if repeatMode == .all, let first = queue.first { load(first) }
-        else { pause() }
+        else if !continueWithSimilar(after: current) { pause() }
+    }
+
+    /// Autoplay: past the end of the queue, keep going with a song like the last one.
+    private func continueWithSimilar(after seed: Track) -> Bool {
+        guard autoplay, let suggest, let track = suggest(seed, Set(queue.map(\.id))) else { return false }
+        queue.append(track)
+        autoplayed.insert(track.id)
+        shuffleTraversal.leave(seed.id)
+        load(track)
+        return true
     }
     func previous() {
         if elapsed > 3 { seek(0); return }

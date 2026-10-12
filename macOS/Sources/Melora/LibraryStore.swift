@@ -75,6 +75,12 @@ final class LibraryStore: ObservableObject {
     }
 
     func fileURL(_ track: Track) -> URL? { try? LibraryPaths.resolve(track.audioPath, in: root) }
+    /// What autoplay plays next: the closest match whose file is still here.
+    func similar(to seed: Track, excluding played: Set<UUID>) -> Track? {
+        Autoplay.ranked(after: seed, in: tracks, playlists: playlists, excluding: played).first { track in
+            fileURL(track).map { FileManager.default.fileExists(atPath: $0.path) } ?? false
+        }
+    }
     func artworkURL(_ track: Track) -> URL? {
         if let art = track.artworkPath.flatMap({ try? LibraryPaths.resolve($0, in: root) }),
            FileManager.default.fileExists(atPath: art.path) { return art }

@@ -17,7 +17,10 @@ struct MeloraApp: App {
                 .frame(minWidth: 980, minHeight: 680)
                 .preferredColorScheme(.light)
                 .tint(Theme.ink)
-                .onAppear { widgets.start(player: player, library: library) }
+                .onAppear {
+                    widgets.start(player: player, library: library)
+                    player.suggest = { [weak library] seed, played in library?.similar(to: seed, excluding: played) }
+                }
                 .task {
                     while !Task.isCancelled {
                         await updates.check(automatically: true, canInstall: { !library.isBusy })
@@ -48,6 +51,7 @@ struct MeloraApp: App {
                 Divider()
                 Button(player.shuffle ? "Turn Shuffle Off" : "Turn Shuffle On") { player.shuffle.toggle() }.keyboardShortcut("s", modifiers: [.command, .shift])
                 Button("Cycle Repeat Mode") { player.cycleRepeat() }.keyboardShortcut("r", modifiers: [.command, .shift])
+                Toggle("Autoplay Similar Songs", isOn: $player.autoplay)
                 Button(player.volume == 0 ? "Unmute" : "Mute") { player.toggleMute() }.keyboardShortcut("m", modifiers: [.command, .shift])
                 Divider()
                 Menu("Sleep Timer") { SleepTimerOptions().environmentObject(player) }

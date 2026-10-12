@@ -146,6 +146,7 @@ export function createServer({ config = loadConfig() } = {}) {
       jobs: state.jobs.list().slice(0, 5),
       settings: {
         scanOnUnlock: state.config.scanOnUnlock,
+        autoplay: state.config.autoplay,
         sources: state.config.sync?.sources ?? [],
         watchIntervalMs: state.config.watch?.intervalMs,
       },
@@ -254,6 +255,7 @@ export function createServer({ config = loadConfig() } = {}) {
       watch: state.config.watch,
       sync: state.config.sync,
       scanOnUnlock: state.config.scanOnUnlock,
+      autoplay: state.config.autoplay,
       extraMountRoots: state.config.extraMountRoots,
     });
   }));
@@ -267,6 +269,7 @@ export function createServer({ config = loadConfig() } = {}) {
       next.sync = { ...next.sync, sources: body.sync.sources.map(normaliseSource) };
     }
     if (body.scanOnUnlock !== undefined) next.scanOnUnlock = Boolean(body.scanOnUnlock);
+    if (body.autoplay !== undefined) next.autoplay = Boolean(body.autoplay);
     if (body.extraMountRoots !== undefined) {
       if (!Array.isArray(body.extraMountRoots)) return fail(res, 400, 'extraMountRoots must be an array');
       next.extraMountRoots = body.extraMountRoots.map((p) => path.resolve(String(p)));
@@ -288,6 +291,7 @@ export function createServer({ config = loadConfig() } = {}) {
       config: {
         sync: state.config.sync,
         scanOnUnlock: state.config.scanOnUnlock,
+        autoplay: state.config.autoplay,
         watch: state.config.watch,
         extraMountRoots: state.config.extraMountRoots,
       },
@@ -358,6 +362,17 @@ export function createServer({ config = loadConfig() } = {}) {
 
   app.patch('/api/tracks/:id', gate, wrap(async (req, res) => {
     res.json({ track: state.library.updateTrack(req.params.id, req.body ?? {}) });
+  }));
+
+  // What autoplay reaches for when the queue runs out. A POST only because
+  // `exclude` is everything already played, which can outgrow a URL.
+  app.post('/api/tracks/:id/similar', gate, wrap(async (req, res) => {
+    const exclude = req.body?.exclude ?? [];
+    if (!Array.isArray(exclude)) return fail(res, 400, 'exclude must be an array');
+    return res.json(state.library.similarTracks(req.params.id, {
+      exclude: exclude.slice(-5000),
+      limit: req.body?.limit,
+    }));
   }));
 
   app.post('/api/tracks/:id/played', gate, wrap(async (req, res) => {

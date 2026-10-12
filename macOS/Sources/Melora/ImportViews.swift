@@ -149,6 +149,14 @@ struct SettingsSheet: View {
                 }
                 Hairline()
                 VStack(alignment: .leading, spacing: 12) {
+                    label("Playback")
+                    Toggle("Autoplay similar songs when the queue ends", isOn: $player.autoplay)
+                        .toggleStyle(.switch).controlSize(.small).tint(Theme.ink).font(.system(size: 13))
+                    Text("Picks from your library by artist, album and the playlists you made. Nothing is downloaded or sent anywhere.")
+                        .font(.system(size: 12)).foregroundStyle(Theme.secondary).lineSpacing(4).fixedSize(horizontal: false, vertical: true)
+                }
+                Hairline()
+                VStack(alignment: .leading, spacing: 12) {
                     label("Video download tools")
                     HStack(spacing: 9) {
                         Image(systemName: library.toolsAvailable ? "checkmark" : "arrow.down.to.line").font(.system(size: 13, weight: .light))

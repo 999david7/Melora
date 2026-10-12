@@ -29,6 +29,15 @@ MELORA_UNIVERSAL=1 ./scripts/build-app.sh
 The universal DMG contains both Apple Silicon and Intel code. Omitting
 `MELORA_UNIVERSAL=1` builds a smaller app for your Mac's architecture.
 
+## Autoplay
+
+When a playlist or queue ends, Melora keeps going with a similar song from your
+library: the same artist first, then shared artist credits, the playlists you
+made, the same album and your favourites. Songs added this way are marked
+AUTOPLAY in the queue. Repeat and the end-of-song sleep timer take precedence.
+Turn it off in the queue panel, in **Settings**, or under **Playback → Autoplay
+Similar Songs**.
+
 ## App updates and releases
 
 Melora checks this repository's latest stable GitHub release at launch and every

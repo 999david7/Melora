@@ -31,6 +31,8 @@ const DEFAULTS = {
   },
   // Re-index the library automatically whenever the drive is plugged in.
   scanOnUnlock: true,
+  // When the queue runs out, keep playing similar tracks from the library.
+  autoplay: true,
   // Additional places to look for the drive, if your system mounts removable
   // media somewhere unusual.
   extraMountRoots: [],

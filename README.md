@@ -36,6 +36,11 @@ melora serve          # → http://127.0.0.1:4610
   shuffle and repeat, seeking, and the keyboard shortcuts you already know.
   Audio is streamed off the drive a range at a time and never cached to your
   internal disk.
+- **Keeps playing when the queue runs out.** Autoplay follows the last track
+  with a similar one from your library — same artist first, then genre, the
+  playlists you made, era and folder. It reads only the index on the drive and
+  asks no outside service. Repeat still takes precedence, and autoplay can be
+  switched off in **Settings**.
 - **Folders, as real folders.** The tree in the sidebar mirrors actual
   directories on the drive. Browse the same structure in Finder or Explorer;
   nothing is hidden inside a database you can't read.
@@ -283,7 +288,7 @@ Melora. Safari plays ALAC; Chrome and Firefox do not.
 ## Development
 
 ```bash
-npm test        # 109 tests, no network, no fixtures to download
+npm test        # 126 tests, no network, no fixtures to download
 ```
 
 The tests build real libraries in temp directories with real audio files —

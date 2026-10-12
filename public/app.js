@@ -37,6 +37,10 @@ const state = {
 };
 
 const player = new Player($('#audio'));
+player.suggest = async (seed, exclude) => {
+  const { items } = await api(`/api/tracks/${seed.id}/similar`, { method: 'POST', body: { exclude } });
+  return items[0] ?? null;
+};
 
 // ------------------------------------------------------------------- fetching
 
@@ -110,6 +114,7 @@ async function refreshStatus() {
     return; // Server restarting or gone; the next poll will find it.
   }
   state.status = status;
+  player.autoplay = status.settings?.autoplay !== false;
 
   const setup = !status.configured;
   const locked = status.locked;
@@ -1042,7 +1047,7 @@ function renderQueuePanel() {
   const track = player.current;
 
   $('#q-where').textContent = track
-    ? [player.source, track.folder_path || 'Library root'].filter(Boolean).join('  ·  ')
+    ? [track.autoplay ? 'Autoplay' : player.source, track.folder_path || 'Library root'].filter(Boolean).join('  ·  ')
     : 'Nothing playing';
   $('#q-title').textContent = track ? (track.title || track.filename) : '—';
   coverInto($('#q-cover'), track?.art_key ? track.id : null, { size: 'full', alt: '' });
@@ -1089,7 +1094,10 @@ function renderQueuePanel() {
   const list = clear($('#q-list'));
   const upcoming = player.upcoming;
   if (upcoming.length === 0) {
-    list.append(el('li', {}, el('span', { class: 'q-empty', text: 'Nothing queued after this one.' })));
+    const text = player.autoplay && track && player.repeat === 'off'
+      ? 'Nothing queued after this one. Autoplay will follow it with something similar from your library.'
+      : 'Nothing queued after this one.';
+    list.append(el('li', {}, el('span', { class: 'q-empty', text })));
     return;
   }
   upcoming.forEach((item, offset) => {
@@ -1266,6 +1274,7 @@ async function openSettings() {
   ]);
   if (config) {
     $('#scan-on-unlock').checked = Boolean(config.scanOnUnlock);
+    $('#autoplay').checked = config.autoplay !== false;
     renderSources(config.sync?.sources ?? []);
   }
   $('#cache-info').textContent = cache
@@ -1477,6 +1486,11 @@ function wire() {
   $('#source-add').addEventListener('click', addSource);
   $('#scan-on-unlock').addEventListener('change', (event) =>
     attempt(() => api('/api/config', { method: 'PATCH', body: { scanOnUnlock: event.target.checked } })));
+  $('#autoplay').addEventListener('change', (event) => {
+    player.autoplay = event.target.checked;
+    renderPlayer();
+    attempt(() => api('/api/config', { method: 'PATCH', body: { autoplay: event.target.checked } }));
+  });
   $('#btn-verify').addEventListener('click', () => runJob('verify', 'Verify'));
   $('#btn-artwork').addEventListener('click', () => runJob('artwork', 'Artwork build'));
 

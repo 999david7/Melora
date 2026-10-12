@@ -28,8 +28,16 @@ export class Player {
     this.counted = false;   // Whether this track has been reported as played.
     this.listened = 0;
     this.lastTime = 0;
+    // Autoplay: when the queue runs out, `suggest(seed, exclude)` is asked for
+    // a track like the last one. The app supplies it; the player only knows
+    // when to ask.
+    this.autoplay = true;
+    this.suggest = null;
+    this.suggesting = false;
+    this.failures = 0;      // Files in a row that would not play.
 
     audio.addEventListener('play', () => this.emit());
+    audio.addEventListener('playing', () => { this.failures = 0; });
     audio.addEventListener('pause', () => this.emit());
     audio.addEventListener('durationchange', () => this.emit());
     audio.addEventListener('ended', () => this.advance(true));
@@ -37,6 +45,7 @@ export class Player {
       const track = this.current;
       if (!track) return;
       this.notify('error', track);
+      this.failures += 1;
       // A file the drive can no longer supply should not wedge the queue.
       this.advance(true);
     });
@@ -222,17 +231,52 @@ export class Player {
       this.start();
       return;
     }
-    if (this.repeat === 'all' || !auto) {
-      // Pressing next at the end wraps; a queue running out on its own only
-      // wraps when you asked it to repeat.
-      if (this.repeat === 'all') {
-        this.position = 0;
-        this.start();
-        return;
-      }
+    if (this.repeat === 'all') {
+      this.position = 0;
+      this.start();
+      return;
+    }
+    // Several files failing in a row means the drive is struggling, not that
+    // the next suggestion will fare better.
+    if (this.autoplay && this.suggest && this.failures < 3) {
+      this.playSimilar();
+      return;
     }
     this.audio.pause();
     this.emit();
+  }
+
+  /** Carry on past the end of the queue with something like what just played. */
+  async playSimilar() {
+    if (this.suggesting) return;
+    const seed = this.current;
+    const position = this.position;
+    this.suggesting = true;
+    let track = null;
+    try {
+      track = await this.suggest(seed, this.queue.map((item) => item.id));
+    } catch {
+      // Drive gone, server restarting: stopping is the honest outcome.
+    } finally {
+      this.suggesting = false;
+    }
+    // You may have picked something else while it was being chosen.
+    if (this.current !== seed || this.position !== position) return;
+    if (this.position + 1 < this.order.length) {
+      // …or queued something, which plays ahead of any suggestion.
+      this.position += 1;
+      this.start();
+      return;
+    }
+    if (!track || track.state === 'unplayable') {
+      this.audio.pause();
+      this.emit();
+      return;
+    }
+    this.queue.push({ ...track, autoplay: true });
+    this.order.push(this.queue.length - 1);
+    this.position += 1;
+    this.start();
   }
 
   /** Back to the start of this track first, then to the previous one. */

@@ -375,6 +375,66 @@ describe('editing', () => {
   });
 });
 
+describe('autoplay', () => {
+  async function radioLibrary() {
+    const library = await makeLibrary();
+    await writeTrack(path.join(library.path, 'Hanne', 'Low Tide', '01.wav'), {
+      title: 'Drift', artist: 'Hanne', album: 'Low Tide', genre: 'Ambient', year: 1990,
+    });
+    await writeTrack(path.join(library.path, 'Hanne', 'Later', '01.wav'), {
+      title: 'Undertow', artist: 'Hanne', album: 'Later', genre: 'Pop', year: 2012,
+    });
+    await writeTrack(path.join(library.path, 'Various', 'haze.wav'), {
+      title: 'Haze', artist: 'Someone Else', genre: 'ambient', year: 2015,
+    });
+    for (let n = 1; n <= 6; n += 1) {
+      await writeTrack(path.join(library.path, 'Noise Co', `${n}.wav`), {
+        title: `Noise ${n}`, artist: 'Noise Co', genre: 'Metal', year: 1970,
+      });
+    }
+    await scanLibrary(library);
+    const byTitle = (title) => library.listTracks({ folder: null, q: title }).items[0];
+    return { library, byTitle };
+  }
+
+  test('the same artist or genre always beats an unrelated track', async () => {
+    const { library, byTitle } = await radioLibrary();
+    const seed = byTitle('Drift');
+    for (let i = 0; i < 30; i += 1) {
+      const [first, second] = library.similarTracks(seed.id, { limit: 2 }).items.map((track) => track.title);
+      assert.deepEqual([first, second].sort(), ['Haze', 'Undertow'], 'same artist, and same genre in any case');
+      const next = library.similarTracks(seed.id, { exclude: [byTitle('Undertow').id] }).items[0];
+      assert.equal(next.title, 'Haze');
+    }
+  });
+
+  test('never repeats what was excluded, then starts over rather than stopping', async () => {
+    const { library, byTitle } = await radioLibrary();
+    const seed = byTitle('Drift');
+    const everything = library.listTracks({ folder: null, limit: 500 }).items.map((track) => track.id);
+
+    const exclude = everything.filter((id) => id !== byTitle('Noise 4').id);
+    assert.deepEqual(library.similarTracks(seed.id, { exclude }).items.map((t) => t.title), ['Noise 4']);
+
+    const again = library.similarTracks(seed.id, { exclude: everything, limit: 50 }).items;
+    assert.equal(again.length, everything.length - 1, 'every other track is back in the running');
+    assert.ok(!again.some((track) => track.id === seed.id), 'but not the one that just played');
+  });
+
+  test('a missing file is never suggested, and a lone track has nothing to follow it', async () => {
+    const library = await makeLibrary();
+    await writeTrack(path.join(library.path, 'a.wav'), { title: 'Drift', artist: 'Hanne' });
+    await writeTrack(path.join(library.path, 'b.wav'), { title: 'Undertow', artist: 'Hanne' });
+    await scanLibrary(library);
+    await fsp.rm(path.join(library.path, 'b.wav'));
+    await scanLibrary(library);
+
+    const [seed] = library.listTracks({ folder: '' }).items;
+    assert.deepEqual(library.similarTracks(seed.id).items, []);
+    assert.throws(() => library.similarTracks(9999), /track not found/);
+  });
+});
+
 describe('folders', () => {
   test('creating and renaming a folder moves the real directory', async () => {
     const library = await makeLibrary();

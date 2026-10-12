@@ -228,6 +228,31 @@ describe('playing', () => {
   });
 });
 
+describe('autoplay', () => {
+  test('suggests the closest match and skips what already played', async () => {
+    const { items: all } = await (await get('/api/tracks?folder=&recursive=1')).json();
+    const rainbow = all.find((track) => track.title === 'The Rainbow');
+    const eden = all.find((track) => track.title === 'Eden');
+
+    let { items } = await (await post(`/api/tracks/${rainbow.id}/similar`, {})).json();
+    assert.equal(items[0].title, 'Eden', 'same artist, album and year');
+
+    ({ items } = await (await post(`/api/tracks/${rainbow.id}/similar`, { exclude: [eden.id] })).json());
+    assert.equal(items[0].title, 'Ember');
+
+    assert.equal((await post(`/api/tracks/${rainbow.id}/similar`, { exclude: 'all' })).status, 400);
+    assert.equal((await post('/api/tracks/9999/similar', {})).status, 404);
+  });
+
+  test('is on by default and can be switched off', async () => {
+    assert.equal((await (await get('/api/config')).json()).autoplay, true);
+    await patch('/api/config', { autoplay: false });
+    assert.equal((await (await get('/api/config')).json()).autoplay, false);
+    assert.equal((await (await get('/api/status')).json()).settings.autoplay, false);
+    await patch('/api/config', { autoplay: true });
+  });
+});
+
 describe('playlists over HTTP', () => {
   let playlistId;
 
